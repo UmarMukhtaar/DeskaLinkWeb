@@ -1,0 +1,187 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\Auth\RegisterController;
+
+use App\Http\Controllers\MarketController;
+use App\Http\Controllers\DesignController as DesignControllerManage;
+use App\Http\Controllers\ServiceController as ServiceControllerManage;
+use App\Http\Controllers\DesignControllerMarket;
+use App\Http\Controllers\ServiceControllerMarket;
+use App\Http\Controllers\PartnerControllerMarket;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\OrderController;
+
+// Route::get('/', function () {
+//     return view('welcome');
+// });
+Route::get('/', function () {
+    return view('welcome');
+})->name('home');  // Add this name
+
+// Redirect based on role
+Route::get('/', function () {
+    if (auth()->check()) {
+        return match(auth()->user()->role) {
+            'admin' => redirect()->route('admin.dashboard'),
+            'partner' => redirect()->route('partner.dashboard'),
+            default => redirect()->route('client.market'),
+        };
+    }
+    return view('welcome');
+});
+
+// Authentication Routes
+Auth::routes();
+
+// Admin Routes
+Route::prefix('admin')->middleware(['auth', 'role:admin'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('admin.dashboard');
+    
+    Route::get('/user-management', function () {
+        return view('admin.user_management_page');
+    })->name('admin.user_management');
+    
+    Route::get('/content-management', function () {
+        return view('admin.content_management_page');
+    })->name('admin.content_management');
+});
+
+// PARTNER ROUTES
+Route::prefix('partner')->middleware(['auth', 'role:partner'])->group(function () {
+    Route::get('/dashboard', function () {
+        return view('partner.dashboard');
+    })->name('partner.dashboard');
+
+    // Manage Services
+    Route::resource('services', ServiceControllerManage::class)->names([
+        'index'   => 'partner.services.index',
+        'create'  => 'partner.services.create',
+        'store'   => 'partner.services.store',
+        'show'    => 'partner.services.show',
+        'edit'    => 'partner.services.edit',
+        'update'  => 'partner.services.update',
+        'destroy' => 'partner.services.destroy',
+    ]);
+
+    // Manage Designs
+    Route::resource('designs', DesignControllerManage::class)->names([
+        'index'   => 'partner.designs.index',
+        'create'  => 'partner.designs.create',
+        'store'   => 'partner.designs.store',
+        'show'    => 'partner.designs.show',
+        'edit'    => 'partner.designs.edit',
+        'update'  => 'partner.designs.update',
+        'destroy' => 'partner.designs.destroy',
+    ]);
+
+    // Orders (Partner)
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{orderItem}/submit', [OrderController::class, 'showSubmitForm'])->name('orders.submit.show');
+    Route::post('/orders/{orderItem}/submit', [OrderController::class, 'submitResult'])->name('orders.submit');
+    // Route::get('/orders', function () {
+    //     return view('partner.order_page');
+    // })->name('partner.orders');
+});
+
+// CLIENT ROUTES
+Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () {
+    // Market & Public Detail
+    Route::get('/market', [MarketController::class, 'index'])->name('client.market');
+    Route::get('/design/{design}', [DesignControllerMarket::class, 'show'])->name('client.design.detail');
+    Route::get('/service/{service}', [ServiceControllerMarket::class, 'show'])->name('client.service.detail');
+    Route::get('/partner/{partner}', [PartnerControllerMarket::class, 'show'])->name('client.partner.profile');
+
+    // Cart Routes
+    Route::post('/cart/add', [CartController::class, 'addToCart'])->name('client.cart.add');
+    Route::get('/cart', [CartController::class, 'index'])->name('client.cart.index');
+    Route::delete('/cart/{cartItem}', [CartController::class, 'remove'])->name('client.cart.remove');
+
+    // Checkout Routes
+    Route::post('/checkout/direct', [CheckoutController::class, 'directCheckout'])->name('client.checkout.direct');
+    Route::get('/checkout', [CheckoutController::class, 'showCheckout'])->name('client.checkout.show');
+    Route::post('/checkout', [CheckoutController::class, 'processCheckout'])->name('client.checkout.process');
+    Route::get('/checkout/notes', [CheckoutController::class, 'showNotes'])->name('client.checkout.notes');
+    Route::post('/checkout/notes', [CheckoutController::class, 'saveNotes'])->name('client.checkout.save-notes');
+    Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('client.checkout.success');
+
+    // Order Routes
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::post('/orders/{order}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
+});
+// Route::prefix('client')->middleware(['auth', 'role:client'])->group(function () {
+//     Route::get('/market', function () {
+//         return view('client.market');
+//     })->name('client.market');
+    
+//     Route::get('/cart', function () {
+//         return view('client.cart_page');
+//     })->name('client.cart');
+    
+//     Route::get('/orders', function () {
+//         return view('client.order_page');
+//     })->name('client.orders');
+// });
+
+// Route::get('/dashboard', function () {
+//     $user = auth()->user();
+    
+//     if ($user->role === 'admin') {
+//         return view('admin.dashboard');
+//     } elseif ($user->role === 'partner') {
+//         return view('partner.dashboard');
+//     } else {
+//         return view('client.market');
+//     }
+// })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+});
+
+require __DIR__.'/auth.php';
+
+
+
+Route::get('/register', [RegisterController::class, 'create'])->name('register');
+Route::post('/register', [RegisterController::class, 'store']);
+
+// use App\Http\Controllers\ProfileController;
+// use Illuminate\Support\Facades\Route;
+
+// /*
+// |--------------------------------------------------------------------------
+// | Web Routes
+// |--------------------------------------------------------------------------
+// |
+// | Here is where you can register web routes for your application. These
+// | routes are loaded by the RouteServiceProvider and all of them will
+// | be assigned to the "web" middleware group. Make something great!
+// |
+// */
+
+// Route::get('/', function () {
+//     return view('welcome');
+// });
+
+// Route::get('/dashboard', function () {
+//     return view('dashboard');
+// })->middleware(['auth', 'verified'])->name('dashboard');
+
+// Route::middleware('auth')->group(function () {
+//     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+//     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+//     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+// });
+
+// require __DIR__.'/auth.php';
+
+Auth::routes();
+
+// Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');

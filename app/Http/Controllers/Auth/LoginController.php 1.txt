@@ -1,0 +1,204 @@
+<?php
+
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
+use Laravel\Socialite\Facades\Socialite;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
+
+class LoginController extends Controller
+{
+    use AuthenticatesUsers;
+
+    /**
+     * Where to redirect users after login.
+     *
+     * @var string
+     */
+    // protected $redirectTo = '/home'; // disable ini
+
+    /**
+     * Create a new controller instance.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        $this->middleware('guest')->except('logout');
+        $this->middleware('auth')->only('logout');
+    }
+
+    /**
+     * Determine the redirection path after login.
+     *
+     * @return string
+     */
+    public function redirectTo()
+    {
+        request()->validate([
+            'email' => 'required|email',
+            'password' => 'required',
+        ]);
+
+        $user = auth()->user();
+
+        // Redirect ke halaman pemilihan role jika role kosong
+        if (empty($user->role)) {
+            return route('role.selection');
+        }
+
+        return match($user->role) {
+            'admin' => route('admin.dashboard'),
+            'partner' => route('partner.dashboard'),
+            'client' => route('client.market'),
+            default => '/',
+        };
+    }
+    /**
+     * Redirect the user to the Google authentication page.
+     */
+    public function redirectToGoogle()
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    /**
+     * Obtain the user information from Google.
+     */
+    public function handleGoogleCallback()
+    {
+        try {
+            $googleUser = Socialite::driver('google')->user();
+            
+            // Cek apakah user sudah terdaftar
+            $user = User::where('email', $googleUser->getEmail())->first();
+
+            if (!$user) {
+                // Generate username from email (before @ symbol)
+                $emailParts = explode('@', $googleUser->getEmail());
+                $baseUsername = $emailParts[0];
+                $username = $baseUsername;
+                
+                // Handle duplicate usernames by adding random numbers
+                $counter = 1;
+                while (User::where('username', $username)->exists()) {
+                    $username = $baseUsername . $counter;
+                    $counter++;
+                }
+
+                // Buat user baru jika belum terdaftar
+                $user = User::create([
+                    'google_id' => $googleUser->getId(),
+                    'full_name' => $googleUser->getName(),
+                    'email' => $googleUser->getEmail(),
+                    'username' => $username, // Tambahkan username
+                    'password' => Hash::make(Str::random(24)),
+                    // 'email_verified_at' => now(), // Verifikasi email otomatis
+                ]);
+            } else {
+                // Update google_id jika user sudah ada tapi belum terhubung dengan Google
+                if (empty($user->google_id)) {
+                    $user->update([
+                        'google_id' => $googleUser->getId(),
+                    ]);
+                }
+            }
+
+            // Login user
+            Auth::login($user);
+
+            // Redirect ke halaman pemilihan role jika role kosong
+            if (empty($user->role)) {
+                return redirect()->route('role.selection');
+            }
+
+            // Redirect berdasarkan role
+            return match($user->role) {
+                'admin' => redirect()->route('admin.dashboard'),
+                'partner' => redirect()->route('partner.dashboard'),
+                'client' => redirect()->route('client.market'),
+                default => redirect('/'),
+            };
+
+        } catch (\Exception $e) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'Google login failed. Please try again.',
+            ]);
+        }
+    }
+
+    /**
+     * Show the role selection form.
+     */
+    public function showRoleSelection()
+    {
+        // Pastikan user belum memiliki role
+        // if (!empty(auth()->user()->role)) {
+        //     return $this->redirectTo();
+        // }
+
+        return view('auth.select-role');
+    }
+
+    /**
+     * Process the role selection.
+     */
+    public function processRoleSelection(Request $request)
+    {
+        $request->validate([
+            'role' => 'required|in:client,partner',
+        ]);
+
+        $user = auth()->user();
+        $user->role = $request->role;
+        $user->save();
+
+        return match($user->role) {
+            'partner' => redirect()->route('partner.dashboard'),
+            default => redirect()->route('client.market'),
+        };
+    }
+}
+// namespace App\Http\Controllers\Auth;
+
+// use App\Http\Controllers\Controller;
+// use Illuminate\Foundation\Auth\AuthenticatesUsers;
+
+// class LoginController extends Controller
+// {
+//     /*
+//     |--------------------------------------------------------------------------
+//     | Login Controller
+//     |--------------------------------------------------------------------------
+//     |
+//     | This controller handles authenticating users for the application and
+//     | redirecting them to your home screen. The controller uses a trait
+//     | to conveniently provide its functionality to your applications.
+//     |
+//     */
+
+//     use AuthenticatesUsers;
+
+//     /**
+//      * Where to redirect users after login.
+//      *
+//      * @var string
+//      */
+//     protected $redirectTo = '/home';
+
+//     /**
+//      * Create a new controller instance.
+//      *
+//      * @return void
+//      */
+//     public function __construct()
+//     {
+//         $this->middleware('guest')->except('logout');
+//         $this->middleware('auth')->only('logout');
+//     }
+// }
