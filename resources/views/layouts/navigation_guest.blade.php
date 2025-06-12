@@ -1,4 +1,7 @@
-<nav x-data="{ open: false }" class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+<nav x-data="{ open: false, scrolled: false }" 
+     @scroll.window="scrolled = (window.pageYOffset > 10)"
+     :class="{'bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm': scrolled, 'bg-white dark:bg-gray-800': !scrolled}"
+     class="fixed w-full z-50 border-b border-gray-100 dark:border-gray-700 transition-all duration-300">
     <!-- Primary Navigation Menu -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
@@ -6,17 +9,17 @@
                 <!-- Logo -->
                 <div class="shrink-0 flex items-center">
                     <a href="{{ url('/') }}">
-                        <x-application-logo class="block h-9 w-auto fill-current text-red-500 dark:text-red-400" />
+                        <span class="text-2xl font-bold block h-9 w-auto fill-current text-red-500 dark:text-red-400">Deskalink</span>
                     </a>
                 </div>
             </div>
 
             <!-- Guest Links -->
             <div class="hidden sm:flex sm:items-center sm:ms-6 space-x-4">
-                <x-nav-link :href="route('login')">
+                <x-nav-link :href="route('login')" class="text-sm font-medium text-red-500 dark:text-gray-300 hover:text-red-700 dark:hover:white transition-colors duration-300">
                     {{ __('Login') }}
                 </x-nav-link>
-                <x-nav-link :href="route('register')">
+                <x-nav-link :href="route('register')" class="text-sm font-medium text-red-500 dark:text-gray-300 hover:text-red-700 dark:hover:white transition-colors duration-300">
                     {{ __('Register') }}
                 </x-nav-link>
             </div>

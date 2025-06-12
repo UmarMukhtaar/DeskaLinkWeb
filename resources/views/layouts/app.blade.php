@@ -7,6 +7,8 @@
 
     <title>{{ config('app.name', 'DeskaLink Web') }}</title>
 
+    <link rel="icon" href="{{ asset('images/Logo Deskalink.png') }}" type="image/png">
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net" />
     <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
@@ -59,7 +61,7 @@
         @endif
 
         <!-- Page Content -->
-        <main class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <main class="max-w-7xl mx-auto py-20 px-4 sm:px-6 lg:px-8">
             {{ $slot }}
         </main>
     </div>
