@@ -106,9 +106,12 @@ class OrderController extends Controller
     public function rejectItem(Request $request, OrderItem $orderItem)
     {
         // Validate authorization and order status
-        if (Auth::id() !== $orderItem->partner_id || $orderItem->status !== 'pending') {
+        if (Auth::id() !== $orderItem->partner_id || !in_array($orderItem->status, ['pending', 'processing'])) {
             abort(403, 'Unauthorized or invalid order status');
         }
+        // if (Auth::id() !== $orderItem->partner_id || $orderItem->status !== 'pending') {
+        //     abort(403, 'Unauthorized or invalid order status');
+        // }
         
         $request->validate([
             'rejection_reason' => 'required|string|max:255'
