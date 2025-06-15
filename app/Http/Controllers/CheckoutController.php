@@ -52,7 +52,7 @@ class CheckoutController extends Controller
                 return back()->with('error', 'Saldo tidak cukup untuk membeli item ini');
             }
             
-            return redirect()->route('client.checkout.notes', [
+            return redirect()->route('client.checkout.direct_notes', [
                 'items' => [[
                     'item_id' => $item->id,
                     'item_type' => $request->item_type,
@@ -73,6 +73,17 @@ class CheckoutController extends Controller
         $total = $request->input('total');
         
         return view('client.checkout.notes', [
+            'items' => $items,
+            'totalPrice' => $total
+        ]);
+    }
+
+    public function showDirectNotes(Request $request)
+    {
+        $items = $request->input('items');
+        $total = $request->input('total');
+        
+        return view('client.checkout.direct_notes', [
             'items' => $items,
             'totalPrice' => $total
         ]);
@@ -156,6 +167,55 @@ class CheckoutController extends Controller
                 if ($request->has('from_cart')) {
                     $user->cartItems()->delete();
                 }
+            });
+            
+            return redirect()->route('client.checkout.success');
+        } catch (\Exception $e) {
+            return back()->with('error', 'Terjadi kesalahan saat menyimpan pesanan');
+        }
+    }
+
+    public function saveDirectNotes(Request $request)
+    {
+        $user = Auth::user();
+        $items = $request->input('items');
+        $notes = $request->input('notes', []);
+        $totalPrice = $request->input('total');
+        
+        // Check balance again
+        if ($user->balance < $totalPrice) {
+            return back()->with('error', 'Saldo tidak cukup untuk melakukan checkout');
+        }
+        
+        try {
+            DB::transaction(function() use ($user, $items, $notes, $totalPrice, $request) {
+                // Create order
+                $order = new Order([
+                    'client_id' => $user->id,
+                    'total_amount' => $totalPrice,
+                    'status' => 'held',
+                ]);
+                $order->save();
+                
+                // Create order items
+                foreach ($items as $index => $item) {
+                    $orderItem = new OrderItem([
+                        'order_id' => $order->id,
+                        'item_id' => $item['item_id'],
+                        'item_type' => $item['item_type'],
+                        'title' => $item['title'],
+                        'price' => $item['price'],
+                        'partner_id' => $item['partner_id'],
+                        'client_id' => $user->id,
+                        'status' => 'pending',
+                        'note' => $notes[$index] ?? null,
+                    ]);
+                    $orderItem->save();
+                }
+                
+                // Deduct balance
+                $user->balance -= $totalPrice;
+                $user->save();
             });
             
             return redirect()->route('client.checkout.success');
