@@ -171,3 +171,7 @@ Route::post('/chat/start/{partner}', [ChatController::class, 'startOrFindConvers
 Route::get('/chat/{conversation?}', [ChatController::class, 'index'])
     ->middleware(['auth'])
     ->name('chat.index');
+
+Route::delete('/chat/conversations/{conversation}', [ChatController::class, 'destroyConversation'])
+    ->middleware(['auth'])
+    ->name('chat.conversation.destroy');

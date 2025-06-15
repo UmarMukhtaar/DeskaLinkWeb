@@ -23,15 +23,30 @@
                                     </li>
                                 </template>
                                 <template x-for="conversation in conversations" :key="conversation.id">
-                                    <li @click="openConversation(conversation.id)"
+                                    <div 
+                                        @click="openConversation(conversation.id)"
+                                        class="flex items-center p-3 rounded-lg transition-colors duration-200 space-x-3 cursor-pointer group"
                                         :class="{ 'bg-red-500 text-white': activeConversationId === conversation.id, 'hover:bg-gray-100 dark:hover:bg-gray-700': activeConversationId !== conversation.id }"
-                                        class="flex items-center p-3 cursor-pointer rounded-lg transition-colors duration-200 space-x-3">
+                                    >
                                         <img :src="getPartner(conversation).profile_photo_url || 'https://via.placeholder.com/40'" alt="Partner Avatar" class="w-10 h-10 rounded-full object-cover flex-shrink-0">
+                                        
                                         <div class="flex-1 overflow-hidden">
                                             <p class="font-bold truncate" :class="{'text-white': activeConversationId === conversation.id, 'text-gray-800 dark:text-gray-200': activeConversationId !== conversation.id }" x-text="getPartner(conversation).name"></p>
                                             <p class="text-sm truncate" :class="{'text-gray-200': activeConversationId === conversation.id, 'text-gray-500 dark:text-gray-400': activeConversationId !== conversation.id }" x-text="getLastMessageSnippet(conversation)"></p>
                                         </div>
-                                    </li>
+
+                                        {{-- TOMBOL HAPUS --}}
+                                        <button 
+                                            @click.stop="confirmDelete(conversation.id, getPartner(conversation).name)"
+                                            class="p-2 rounded-full text-gray-400 opacity-0 group-hover:opacity-100 hover:bg-gray-200 dark:hover:bg-gray-600 transition"
+                                            :class="{'opacity-100': activeConversationId === conversation.id}"
+                                            title="Hapus Percakapan"
+                                        >
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                                            </svg>
+                                        </button>
+                                    </div>
                                 </template>
                             </ul>
                         </div>
@@ -188,6 +203,36 @@
                         this.newMessageBody = messageBody; // Kembalikan teks jika gagal kirim
                     })
                     .finally(() => this.isSending = false);
+                },
+
+                confirmDelete(conversationId, partnerName) {
+                    Swal.fire({
+                        title: 'Hapus Percakapan?',
+                        text: `Anda yakin ingin menghapus percakapan dengan ${partnerName}? Aksi ini tidak bisa dibatalkan.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6',
+                        confirmButtonText: 'Ya, hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            // Buat form dinamis untuk mengirim request DELETE
+                            let form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = `/chat/conversations/${conversationId}`;
+                            
+                            let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                            
+                            form.innerHTML = `
+                                <input type="hidden" name="_method" value="DELETE">
+                                <input type="hidden" name="_token" value="${csrfToken}">
+                            `;
+                            
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    })
                 },
 
                 getPartner(conversation) {

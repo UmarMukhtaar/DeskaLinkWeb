@@ -105,4 +105,15 @@ class ChatController extends Controller
         
         return response()->json($conversations);
     }
+    public function destroyConversation(Conversation $conversation)
+    {
+        // Otorisasi: Pastikan user yang menghapus adalah anggota percakapan
+        if (!$conversation->users->contains(Auth::user())) {
+            return redirect()->back()->with('error', 'Aksi tidak diizinkan.');
+        }
+
+        $conversation->delete();
+
+        return redirect()->route('chat.index')->with('success', 'Percakapan berhasil dihapus.');
+    }
 }
