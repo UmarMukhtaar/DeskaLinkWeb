@@ -141,7 +141,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/checkout', [CheckoutController::class, 'showCheckout'])->name('client.checkout.show');
         Route::post('/checkout', [CheckoutController::class, 'processCheckout'])->name('client.checkout.process');
         Route::get('/checkout/notes', [CheckoutController::class, 'showNotes'])->name('client.checkout.notes');
+        Route::get('/checkout/notes/direct', [CheckoutController::class, 'showDirectNotes'])->name('client.checkout.direct_notes');
         Route::post('/checkout/notes', [CheckoutController::class, 'saveNotes'])->name('client.checkout.save-notes');
+        Route::post('/checkout/notes/direct', [CheckoutController::class, 'saveDirectNotes'])->name('client.checkout.save-direct-notes');
         Route::get('/checkout/success', [CheckoutController::class, 'success'])->name('client.checkout.success');
 
         // Order Routes
