@@ -67,6 +67,20 @@
                     <!-- Action Buttons (aligned to bottom) -->
                     <div class="mt-auto">
                         <div class="flex flex-col sm:flex-row gap-4">
+                            @auth
+                                @if(auth()->user()->id !== $partner->id)
+                                    <form action="{{ route('chat.start', $partner->id) }}" method="POST" class="flex-1">
+                                        @csrf
+                                        <button type="submit" 
+                                                class="w-full flex items-center justify-center py-3 px-4 bg-blue-500 text-white font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md transition">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                                                <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd" />
+                                            </svg>
+                                            Hubungi Penjual
+                                        </button>
+                                    </form>
+                                @endif
+                            @endauth
                             <form action="{{ route('client.cart.add') }}" method="POST" class="flex-1">
                                 @csrf
                                 <input type="hidden" name="item_id" value="{{ $design->id }}">

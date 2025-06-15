@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Service;
 use App\Models\Design;
 use App\Models\OrderItem;
+use Illuminate\Support\Facades\Auth;
 
 class PartnerController extends Controller
 {
@@ -148,6 +149,12 @@ class PartnerController extends Controller
         ->merge($pendingOrders)
         ->sortByDesc('time')
         ->take(5);
+
+    $conversations = $user->conversations()
+            ->with(['users', 'latestMessage'])
+            ->latest('updated_at')
+            ->take(5)
+            ->get();
     
     return view('partner.dashboard', [
         'stats' => [
@@ -159,6 +166,7 @@ class PartnerController extends Controller
         'recentContent' => $recentContent,
         'recentOrders' => $recentOrders,
         'notifications' => $notifications,
+        'conversations' => $conversations,
     ]);
 }
 }

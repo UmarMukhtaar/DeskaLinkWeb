@@ -15,6 +15,7 @@ use App\Http\Controllers\PartnerControllerMarket;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\ChatController;
 
 // Home route - accessible to all
 Route::get('/', function () {
@@ -160,3 +161,11 @@ Route::middleware('auth')->group(function () {
 // Registration Routes (accessible to guests)
 Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
 Route::post('/register', [RegisterController::class, 'register']);
+
+Route::post('/chat/start/{partner}', [ChatController::class, 'startOrFindConversation'])
+    ->middleware(['auth']) // Pastikan hanya user yang login yang bisa mengakses
+    ->name('chat.start');
+
+Route::get('/chat/{conversation?}', [ChatController::class, 'index'])
+    ->middleware(['auth'])
+    ->name('chat.index');

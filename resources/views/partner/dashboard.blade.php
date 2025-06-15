@@ -141,79 +141,103 @@
         </div>
 
         <!-- Recent Orders -->
-        <div class="bg-white rounded-lg shadow overflow-hidden mb-8">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <h3 class="text-lg font-medium text-gray-900">Pesanan Terbaru</h3>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- KOLOM KIRI (LEBIH LEBAR) UNTUK PESANAN -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow overflow-hidden h-full flex flex-col">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Pesanan Terbaru</h3>
+                    </div>
+                    <div class="overflow-x-auto flex-grow">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                @forelse($recentOrders as $order)
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap"><div class="flex items-center"><div class="flex-shrink-0 h-10 w-10"><img class="h-10 w-10 rounded-full" src="{{ $order->client->profile_photo_url }}" alt="{{ $order->client->full_name }}"></div></div></td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm font-medium text-gray-900">{{ $order->title }}</div><div class="text-sm text-gray-500">{{ $order->item_type === 'service' ? 'Jasa' : 'Desain' }}</div></td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-900">Rp{{ number_format($order->price, 0, ',', '.') }}</div></td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><div class="text-sm text-gray-500">{{ $order->created_at->format('d M Y') }}</div></td>
+                                    <td class="px-6 py-4 whitespace-nowrap"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ $order->status === 'completed' ? 'bg-green-100 text-green-800' : ($order->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : ($order->status === 'processing' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800')) }}">{{ ucfirst($order->status) }}</span></td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">@if($order->status === 'pending')<form action="{{ route('orders.accept.item', $order) }}" method="POST" class="inline">@csrf<button type="submit" class="text-green-600 hover:text-green-900 mr-2">Terima</button></form><button type="button" onclick="openRejectModal({{ $order->id }}, '{{ $order->title }}')" class="text-yellow-600 hover:text-yellow-900">Tolak</button>@elseif($order->status === 'processing')<a href="{{ route('orders.submit.show', $order) }}" class="text-blue-600 hover:text-blue-900">Kirim Hasil</a>@endif</td>
+                                </tr>
+                                @empty
+                                <tr><td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">Tidak ada pesanan terbaru</td></tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Client</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Item</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Harga</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tanggal</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        @forelse($recentOrders as $order)
-                        <tr>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10">
-                                        <img class="h-10 w-10 rounded-full" src="{{ $order->client->profile_photo_url }}" alt="{{ $order->client->full_name }}">
+
+            <!-- KOLOM KANAN (LEBIH KECIL) UNTUK PESAN & NOTIFIKASI -->
+            <div class="space-y-8">
+                <!-- Widget Pesan Terbaru -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                        <h3 class="text-lg font-medium text-gray-900">Pesan Terbaru</h3>
+                        <a href="{{ route('chat.index') }}" class="text-sm font-medium text-red-600 hover:text-red-900">Lihat Semua</a>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        @forelse($conversations as $conversation)
+                            <a href="{{ route('chat.index', ['conversation' => $conversation->id]) }}" class="block p-4 hover:bg-gray-50 transition">
+                                <div class="flex items-center space-x-3">
+                                    @php $partner = $conversation->users->where('id', '!=', auth()->id())->first(); @endphp
+                                    <img class="h-10 w-10 rounded-full object-cover" src="{{ $partner->profile_photo_url ?? 'https://via.placeholder.com/40' }}" alt="{{ $partner->name ?? 'User' }}">
+                                    <div class="flex-1 overflow-hidden">
+                                        <p class="text-sm font-medium text-gray-900 truncate">{{ $partner->name ?? 'User Dihapus' }}</p>
+                                        <p class="text-sm text-gray-500 truncate">{{ $conversation->latestMessage->body ?? 'Klik untuk memulai percakapan...' }}</p>
                                     </div>
+                                    <span class="text-xs text-gray-400">{{ $conversation->updated_at->diffForHumans() }}</span>
                                 </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">{{ $order->title }}</div>
-                                <div class="text-sm text-gray-500">
-                                    {{ $order->item_type === 'service' ? 'Jasa' : 'Desain' }}
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">Rp{{ number_format($order->price, 0, ',', '.') }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-500">{{ $order->created_at->format('d M Y') }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                    {{ $order->status === 'completed' ? 'bg-green-100 text-green-800' : 
-                                       ($order->status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                                       ($order->status === 'processing' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-800')) }}">
-                                    {{ ucfirst($order->status) }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                @if($order->status === 'pending')
-                                <form action="{{ route('orders.accept.item', $order) }}" method="POST" class="inline">
-                                    @csrf
-                                    <button type="submit" class="text-green-600 hover:text-green-900 mr-2">Terima</button>
-                                </form>
-                                <button 
-                                    type="button"
-                                    onclick="openRejectModal({{ $order->id }}, '{{ $order->title }}')"
-                                    class="text-yellow-600 hover:text-yellow-900"
-                                >
-                                    Tolak
-                                </button>
-                                @elseif($order->status === 'processing')
-                                <a href="{{ route('orders.submit.show', $order) }}" class="text-blue-600 hover:text-blue-900">Kirim Hasil</a>
-                                @endif
-                            </td>
-                        </tr>
+                            </a>
                         @empty
-                        <tr>
-                            <td colspan="6" class="px-6 py-4 text-center text-sm text-gray-500">
-                                Tidak ada pesanan terbaru
-                            </td>
-                        </tr>
+                            <div class="px-6 py-4 text-center text-sm text-gray-500">Tidak ada pesan terbaru.</div>
                         @endforelse
-                    </tbody>
-                </table>
+                    </div>
+                </div>
+
+                <!-- Widget Notifikasi -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-medium text-gray-900">Notifikasi Penting</h3>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">{{ $notifications->count() }} Baru</span>
+                        </div>
+                    </div>
+                    <div class="divide-y divide-gray-200">
+                        @forelse($notifications as $notification)
+                        <div class="px-6 py-4">
+                            <div class="flex items-start">
+                                <div class="flex-shrink-0 pt-1">
+                                    @if($notification['type'] === 'rejection')
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                    @else
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+                                    @endif
+                                </div>
+                                <div class="ml-3 flex-1">
+                                    <div class="text-sm font-medium text-gray-900">{{ $notification['title'] }}</div>
+                                    <div class="text-sm text-gray-500 mt-1">{{ $notification['message'] }}</div>
+                                    <div class="mt-2 text-xs text-gray-500">{{ $notification['time'] }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        @empty
+                        <div class="px-6 py-4 text-center text-sm text-gray-500">Tidak ada notifikasi baru</div>
+                        @endforelse
+                    </div>
+                </div>
             </div>
         </div>
 

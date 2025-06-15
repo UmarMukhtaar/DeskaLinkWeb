@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Models\Conversation;
 
 class User extends Authenticatable
 {
@@ -67,6 +68,10 @@ class User extends Authenticatable
     public function services()
     {
         return $this->hasMany(Service::class, 'partner_id');
+    }
+    public function conversations()
+    {
+        return $this->belongsToMany(Conversation::class);
     }
 }
 // class User extends Authenticatable
