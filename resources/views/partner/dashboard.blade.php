@@ -206,43 +206,11 @@
                         @endforelse
                     </div>
                 </div>
-
-                <!-- Widget Notifikasi -->
-                <div class="bg-white rounded-lg shadow overflow-hidden">
-                    <div class="px-6 py-4 border-b border-gray-200">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-medium text-gray-900">Notifikasi Penting</h3>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">{{ $notifications->count() }} Baru</span>
-                        </div>
-                    </div>
-                    <div class="divide-y divide-gray-200">
-                        @forelse($notifications as $notification)
-                        <div class="px-6 py-4">
-                            <div class="flex items-start">
-                                <div class="flex-shrink-0 pt-1">
-                                    @if($notification['type'] === 'rejection')
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                    @else
-                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                                    @endif
-                                </div>
-                                <div class="ml-3 flex-1">
-                                    <div class="text-sm font-medium text-gray-900">{{ $notification['title'] }}</div>
-                                    <div class="text-sm text-gray-500 mt-1">{{ $notification['message'] }}</div>
-                                    <div class="mt-2 text-xs text-gray-500">{{ $notification['time'] }}</div>
-                                </div>
-                            </div>
-                        </div>
-                        @empty
-                        <div class="px-6 py-4 text-center text-sm text-gray-500">Tidak ada notifikasi baru</div>
-                        @endforelse
-                    </div>
-                </div>
             </div>
         </div>
 
         <!-- Notifications -->
-        <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="bg-white rounded-lg shadow overflow-hidden mt-8">
             <div class="px-6 py-4 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-medium text-gray-900">Notifikasi Penting</h3>
