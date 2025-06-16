@@ -1,6 +1,15 @@
 <x-app-layout>
     <div class="container mx-auto px-4 py-6">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Partner Dashboard</h1>
+
+        <div class="flex justify-between items-center mb-6">
+            <button onclick="generatePDF()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Download PDF Report
+            </button>
+        </div>
         
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -83,6 +92,67 @@
             </div>
         </div>
 
+        <!-- Chart and Notifications Row -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- Transaction Chart (2/3 width) -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow overflow-hidden h-full">
+                    <div class="px-6 py-4 border-b border-gray-200">
+                        <h3 class="text-lg font-medium text-gray-900">Tren Transaksi 6 Bulan Terakhir</h3>
+                    </div>
+                    <div class="p-4">
+                        <canvas id="transactionChart" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications (1/3 width) -->
+            <div class="bg-white rounded-lg shadow overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-medium text-gray-900">Notifikasi Penting</h3>
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                            {{ $notifications->count() }} Baru
+                        </span>
+                    </div>
+                </div>
+                <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                    @forelse($notifications as $notification)
+                    <div class="px-6 py-4">
+                        <div class="flex items-start">
+                            <div class="flex-shrink-0 pt-1">
+                                @if($notification['type'] === 'rejection')
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                @else
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                @endif
+                            </div>
+                            <div class="ml-3 flex-1">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ $notification['title'] }}
+                                </div>
+                                <div class="text-sm text-gray-500 mt-1">
+                                    {{ $notification['message'] }}
+                                </div>
+                                <div class="mt-2 text-xs text-gray-500">
+                                    {{ $notification['time'] }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    @empty
+                    <div class="px-6 py-4 text-center text-sm text-gray-500">
+                        Tidak ada notifikasi baru
+                    </div>
+                    @endforelse
+                </div>
+            </div>
+        </div>
+
         <!-- Recent Content -->
         <div class="bg-white rounded-lg shadow overflow-hidden mb-8">
             <div class="px-6 py-4 border-b border-gray-200">
@@ -140,7 +210,7 @@
             </div>
         </div>
 
-        <!-- Recent Orders -->
+        <!-- Recent Orders and Messages -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
             <!-- KOLOM KIRI (LEBIH LEBAR) UNTUK PESANAN -->
@@ -180,7 +250,7 @@
                 </div>
             </div>
 
-            <!-- KOLOM KANAN (LEBIH KECIL) UNTUK PESAN & NOTIFIKASI -->
+            <!-- KOLOM KANAN (LEBIH KECIL) UNTUK PESAN -->
             <div class="space-y-8">
                 <!-- Widget Pesan Terbaru -->
                 <div class="bg-white rounded-lg shadow overflow-hidden">
@@ -208,52 +278,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Notifications -->
-        <div class="bg-white rounded-lg shadow overflow-hidden mt-8">
-            <div class="px-6 py-4 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-medium text-gray-900">Notifikasi Penting</h3>
-                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
-                        {{ $notifications->count() }} Baru
-                    </span>
-                </div>
-            </div>
-            <div class="divide-y divide-gray-200">
-                @forelse($notifications as $notification)
-                <div class="px-6 py-4">
-                    <div class="flex items-start">
-                        <div class="flex-shrink-0 pt-1">
-                            @if($notification['type'] === 'rejection')
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                            @else
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                            @endif
-                        </div>
-                        <div class="ml-3 flex-1">
-                            <div class="text-sm font-medium text-gray-900">
-                                {{ $notification['title'] }}
-                            </div>
-                            <div class="text-sm text-gray-500 mt-1">
-                                {{ $notification['message'] }}
-                            </div>
-                            <div class="mt-2 text-xs text-gray-500">
-                                {{ $notification['time'] }}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                @empty
-                <div class="px-6 py-4 text-center text-sm text-gray-500">
-                    Tidak ada notifikasi baru
-                </div>
-                @endforelse
-            </div>
-        </div>
     </div>
 
     <!-- Current Balance Card (Fixed at bottom right) -->
@@ -272,67 +296,170 @@
     </div>
 
     <!-- Reject Modal -->
-<div id="rejectModal" class="fixed inset-0 overflow-y-auto z-50 hidden">
-    <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-        <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-        <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-        <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-            <form id="rejectForm" method="POST">
-                @csrf
-                <div>
-                    <h3 class="text-lg font-medium mb-4">Tolak Pesanan</h3>
-                    <div class="mb-2">
-                        <p class="text-sm text-gray-600">Item: <span id="modalOrderTitle"></span></p>
+    <div id="rejectModal" class="fixed inset-0 overflow-y-auto z-50 hidden">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <form id="rejectForm" method="POST">
+                    @csrf
+                    <div>
+                        <h3 class="text-lg font-medium mb-4">Tolak Pesanan</h3>
+                        <div class="mb-2">
+                            <p class="text-sm text-gray-600">Item: <span id="modalOrderTitle"></span></p>
+                        </div>
+                        <label for="rejection_reason" class="block text-sm font-medium text-gray-700">Alasan Penolakan</label>
+                        <textarea id="rejection_reason" name="rejection_reason" rows="3" 
+                            class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" 
+                            required
+                            placeholder="Berikan alasan penolakan pesanan"></textarea>
                     </div>
-                    <label for="rejection_reason" class="block text-sm font-medium text-gray-700">Alasan Penolakan</label>
-                    <textarea id="rejection_reason" name="rejection_reason" rows="3" 
-                        class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-red-500 focus:border-red-500 sm:text-sm" 
-                        required
-                        placeholder="Berikan alasan penolakan pesanan"></textarea>
-                </div>
-                <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-                    <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm">
-                        Tolak Pesanan
-                    </button>
-                    <button type="button" onclick="closeRejectModal()" 
-                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:col-start-1 sm:text-sm">
-                        Batal
-                    </button>
-                </div>
-            </form>
+                    <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+                        <button type="submit" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:col-start-2 sm:text-sm">
+                            Tolak Pesanan
+                        </button>
+                        <button type="button" onclick="closeRejectModal()" 
+                            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:col-start-1 sm:text-sm">
+                            Batal
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-    function openRejectModal(orderItemId, orderTitle) {
-        const modal = document.getElementById('rejectModal');
-        const form = document.getElementById('rejectForm');
-        const titleElement = document.getElementById('modalOrderTitle');
-        
-        // Gunakan route helper Laravel dengan replace placeholder
-        form.action = '{{ route("orders.reject.item", ["orderItem" => "PLACEHOLDER"]) }}'.replace('PLACEHOLDER', orderItemId);
-        
-        // Set order title in modal
-        titleElement.textContent = orderTitle;
-        
-        // Show modal
-        modal.classList.remove('hidden');
-        document.body.classList.add('overflow-hidden');
-    }
+    @push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        // Transaction Chart
+        document.addEventListener('DOMContentLoaded', function() {
+            const transactionCtx = document.getElementById('transactionChart').getContext('2d');
+            const transactionChart = new Chart(transactionCtx, {
+                type: 'bar',
+                data: {
+                    labels: @json($transactionLabels ?? []),
+                    datasets: [
+                        {
+                            label: 'Jumlah Pesanan',
+                            data: @json($transactionData ?? []),
+                            backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                            borderColor: 'rgba(79, 70, 229, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Pendapatan (Rp)',
+                            data: @json($transactionRevenueData ?? []),
+                            backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                            borderColor: 'rgba(16, 185, 129, 1)',
+                            borderWidth: 1,
+                            type: 'line',
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            title: {
+                                display: true,
+                                text: 'Jumlah Pesanan'
+                            },
+                            beginAtZero: true
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            title: {
+                                display: true,
+                                text: 'Pendapatan (Rp)'
+                            },
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return 'Rp' + value.toLocaleString('id-ID');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        });
 
-    function closeRejectModal() {
-        const modal = document.getElementById('rejectModal');
-        const textarea = document.getElementById('rejection_reason');
+        // PDF Generation
+        function generatePDF() {
+            Swal.fire({
+                title: 'Generating PDF Report',
+                html: 'Please wait while we prepare your report...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                    
+                    // Use html2canvas and jsPDF to generate PDF
+                    const { jsPDF } = window.jspdf;
+                    
+                    html2canvas(document.querySelector('.container')).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        const pdf = new jsPDF('p', 'mm', 'a4');
+                        const imgProps = pdf.getImageProperties(imgData);
+                        const pdfWidth = pdf.internal.pageSize.getWidth();
+                        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                        
+                        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                        pdf.save('partner-dashboard-' + new Date().toISOString().slice(0, 10) + '.pdf');
+                        
+                        Swal.close();
+                    }).catch(err => {
+                        Swal.fire('Error', 'Failed to generate PDF: ' + err.message, 'error');
+                    });
+                }
+            });
+        }
         
-        // Reset form
-        textarea.value = '';
-        
-        // Hide modal
-        modal.classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
-    }
+        function openRejectModal(orderItemId, orderTitle) {
+            const modal = document.getElementById('rejectModal');
+            const form = document.getElementById('rejectForm');
+            const titleElement = document.getElementById('modalOrderTitle');
+            
+            // Gunakan route helper Laravel dengan replace placeholder
+            form.action = '{{ route("orders.reject.item", ["orderItem" => "PLACEHOLDER"]) }}'.replace('PLACEHOLDER', orderItemId);
+            
+            // Set order title in modal
+            titleElement.textContent = orderTitle;
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+        }
 
-    // Tidak perlu event listener submit tambahan karena form akan diproses normal
-</script>
+        function closeRejectModal() {
+            const modal = document.getElementById('rejectModal');
+            const textarea = document.getElementById('rejection_reason');
+            
+            // Reset form
+            textarea.value = '';
+            
+            // Hide modal
+            modal.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        }
+
+    </script>
+    @endpush
 </x-app-layout>

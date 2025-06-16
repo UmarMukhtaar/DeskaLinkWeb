@@ -1,6 +1,15 @@
 <x-app-layout>
     <div class="container mx-auto px-4 py-6">
         <h1 class="text-2xl font-bold text-gray-800 mb-6">Admin Dashboard</h1>
+
+        <div class="flex justify-end mb-6">
+            <button onclick="generatePDF()" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Download PDF Report
+            </button>
+        </div>
         
         <!-- Stats Cards -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -83,19 +92,19 @@
         </div>
 
         <!-- Charts Row -->
-        <!-- <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8"> -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
             <!-- Transaction Trend Chart -->
-            <!-- <div class="bg-white rounded-lg shadow p-6">
+            <div class="bg-white rounded-lg shadow p-6">
                 <h3 class="text-lg font-medium text-gray-900 mb-4">Tren Transaksi Bulanan</h3>
                 <canvas id="transactionChart" height="250"></canvas>
-            </div> -->
+            </div>
 
-            <!-- Content Status Chart -->
-            <!-- <div class="bg-white rounded-lg shadow p-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Status Konten</h3>
-                <canvas id="contentStatusChart" height="250"></canvas>
-            </div> -->
-        <!-- </div> -->
+            <!-- User Role Distribution Chart -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h3 class="text-lg font-medium text-gray-900 mb-4">Distribusi Peran Pengguna</h3>
+                <canvas id="userRoleChart" height="250"></canvas>
+            </div>
+        </div>
 
         <!-- Recent Content -->
         <div class="bg-white rounded-lg shadow overflow-hidden mb-8">
@@ -278,40 +287,132 @@
     @push('scripts')
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>
         // Transaction Trend Chart
         const transactionCtx = document.getElementById('transactionChart').getContext('2d');
         const transactionChart = new Chart(transactionCtx, {
-            type: 'line',
+            type: 'bar',
             data: {
                 labels: @json($transactionLabels),
+                datasets: [
+                    {
+                        label: 'Jumlah Transaksi',
+                        data: @json($transactionData),
+                        backgroundColor: 'rgba(79, 70, 229, 0.7)',
+                        borderColor: 'rgba(79, 70, 229, 1)',
+                        borderWidth: 1,
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Pendapatan (Rp)',
+                        data: @json($transactionRevenueData),
+                        backgroundColor: 'rgba(16, 185, 129, 0.7)',
+                        borderColor: 'rgba(16, 185, 129, 1)',
+                        borderWidth: 1,
+                        type: 'line',
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: {
+                            display: true,
+                            text: 'Jumlah Transaksi'
+                        },
+                        beginAtZero: true
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: {
+                            display: true,
+                            text: 'Pendapatan (Rp)'
+                        },
+                        beginAtZero: true,
+                        grid: {
+                            drawOnChartArea: false
+                        }
+                    }
+                }
+            }
+        });
+
+        // User Role Chart
+        const userRoleCtx = document.getElementById('userRoleChart').getContext('2d');
+        const userRoleChart = new Chart(userRoleCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Client', 'Partner'],
                 datasets: [{
-                    label: 'Jumlah Transaksi',
-                    data: @json($transactionData),
-                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                    borderColor: 'rgba(79, 70, 229, 1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    fill: true
+                    data: @json($userRoleData),
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.7)',
+                        'rgba(59, 130, 246, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(16, 185, 129, 1)',
+                        'rgba(59, 130, 246, 1)'
+                    ],
+                    borderWidth: 1
                 }]
             },
             options: {
                 responsive: true,
                 plugins: {
                     legend: {
-                        display: false
-                    }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1
-                        }
+                        position: 'bottom',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribusi Peran Pengguna'
                     }
                 }
             }
         });
+
+        // PDF Generation
+        function generatePDF() {
+            Swal.fire({
+                title: 'Generating PDF Report',
+                html: 'Please wait while we prepare your report...',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                    
+                    // Use html2canvas and jsPDF to generate PDF
+                    const { jsPDF } = window.jspdf;
+                    
+                    html2canvas(document.querySelector('.container')).then(canvas => {
+                        const imgData = canvas.toDataURL('image/png');
+                        const pdf = new jsPDF('p', 'mm', 'a4');
+                        const imgProps = pdf.getImageProperties(imgData);
+                        const pdfWidth = pdf.internal.pageSize.getWidth();
+                        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                        
+                        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                        pdf.save('dashboard-report-' + new Date().toISOString().slice(0, 10) + '.pdf');
+                        
+                        Swal.close();
+                    }).catch(err => {
+                        Swal.fire('Error', 'Failed to generate PDF: ' + err.message, 'error');
+                    });
+                }
+            });
+        }
 
         // Content Status Chart
         const contentStatusCtx = document.getElementById('contentStatusChart').getContext('2d');

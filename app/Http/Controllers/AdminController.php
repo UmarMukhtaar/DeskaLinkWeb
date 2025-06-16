@@ -233,6 +233,7 @@ class AdminController extends Controller
         // Transaction data for chart (last 6 months)
         $transactionData = [];
         $transactionLabels = [];
+        $transactionRevenueData = [];
         
         for ($i = 5; $i >= 0; $i--) {
             $month = now()->subMonths($i);
@@ -240,9 +241,21 @@ class AdminController extends Controller
                 ->whereMonth('created_at', $month->month)
                 ->count();
             
+            $revenue = OrderItem::whereYear('created_at', $month->year)
+                ->whereMonth('created_at', $month->month)
+                ->where('status', 'delivered')
+                ->sum('price');
+            
             $transactionData[] = $count;
+            $transactionRevenueData[] = $revenue;
             $transactionLabels[] = $month->format('M Y');
         }
+        
+        // User role distribution data
+        $userRoleData = [
+            User::where('role', 'client')->count(),
+            User::where('role', 'partner')->count()
+        ];
         
         // Content status data
         $contentStatusData = [
@@ -268,6 +281,8 @@ class AdminController extends Controller
             'recentUsers' => $recentUsers,
             'transactionLabels' => $transactionLabels,
             'transactionData' => $transactionData,
+            'transactionRevenueData' => $transactionRevenueData,
+            'userRoleData' => $userRoleData,
             'contentStatusData' => $contentStatusData,
         ]);
     }

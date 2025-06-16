@@ -67,7 +67,7 @@
                                 <input type="hidden" name="item_type" value="service">
                                 @auth
                                 <button type="submit" 
-                                        class="w-full py-3 px-4 bg-white text-red-500 font-medium border border-red-500 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                        class="w-full py-3 px-4 bg-white text-red-500 font-medium border border-red-500 hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-md">
                                     Tambahkan ke Keranjang
                                 </button>
                                 @else
@@ -83,7 +83,7 @@
                                 <input type="hidden" name="item_type" value="service">
                                 @auth
                                 <button type="submit" 
-                                        class="w-full py-3 px-4 bg-red-500 text-white font-medium hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500">
+                                        class="w-full py-6 px-4 bg-red-500 text-white font-medium hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 rounded-md">
                                     Beli Sekarang
                                 </button>
                                 @else

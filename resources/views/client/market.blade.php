@@ -51,16 +51,6 @@
                         Desain
                     </a>
                 </li>
-                @auth
-                    <li class="mr-2">
-                        <a href="{{ route('chat.index') }}" class="inline-flex items-center py-4 px-4 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
-                             <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd" />
-                            </svg>
-                            Pesan Saya
-                        </a>
-                    </li>
-                @endauth
             </ul>
         </div>
 
@@ -123,7 +113,6 @@
                                         </p>
                                     </div>
                                 </a>
-                                    
                             </div>
                         @endforeach
                     </div>
@@ -131,6 +120,17 @@
             @endif
         </div>
     </div>
+
+    @auth
+        <!-- Floating Chat Button -->
+        <div class="fixed bottom-6 right-6">
+            <a href="{{ route('chat.index') }}" class="flex items-center justify-center w-14 h-14 rounded-full bg-red-500 text-white shadow-lg hover:bg-red-600 transition-colors duration-300">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd" />
+                </svg>
+            </a>
+        </div>
+    @endauth
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
