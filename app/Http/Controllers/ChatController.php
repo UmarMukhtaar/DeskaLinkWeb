@@ -116,4 +116,21 @@ class ChatController extends Controller
 
         return redirect()->route('chat.index')->with('success', 'Percakapan berhasil dihapus.');
     }
+    public function updateMessage(Request $request, Message $message)
+    {
+        // Otorisasi menggunakan MessagePolicy yang sudah dibuat
+        $this->authorize('update', $message);
+
+        $validated = $request->validate(['body' => 'required|string']);
+
+        $message->update(['body' => $validated['body']]);
+        
+        $message->load('user'); // Muat kembali relasi user
+
+        // Broadcast event baru agar semua tahu pesan ini diupdate
+        // Anda perlu membuat event MessageUpdated, mirip seperti MessageSent
+        // broadcast(new MessageUpdated($message))->toOthers();
+
+        return response()->json($message);
+    }
 }

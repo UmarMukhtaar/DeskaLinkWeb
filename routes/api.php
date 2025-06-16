@@ -31,4 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Route untuk mengirim pesan baru
     Route::post('/conversations/{conversation}/messages', [ChatController::class, 'storeMessage'])
         ->name('api.messages.store');
+
+    Route::patch('/messages/{message}', [ChatController::class, 'updateMessage'])
+    ->name('api.messages.update');
 });

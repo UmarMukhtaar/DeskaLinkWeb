@@ -84,15 +84,59 @@
 
                             {{-- Menampilkan pesan --}}
                             <template x-for="message in messages" :key="message.id">
-                                <div class="mb-4" :class="{ 'text-right': message.user_id === authUserId }">
-                                    <p class="text-xs text-gray-500 dark:text-gray-400 mb-1"
-                                       :class="{ 'mr-2': message.user_id === authUserId, 'ml-2': message.user_id !== authUserId }"
-                                       x-text="message.user ? message.user.name : ''">
-                                    </p>
-                                    <div class="inline-block py-2 px-4 rounded-xl"
-                                         :class="{ 'bg-red-500 text-white': message.user_id === authUserId, 'bg-white dark:bg-gray-700': message.user_id !== authUserId }">
-                                        <p class="text-left" x-text="message.body"></p>
-                                        <span class="text-xs opacity-70" x-text="formatTime(message.created_at)"></span>
+                                <div 
+                                    class="flex items-start mb-4 group" 
+                                    :class="{ 'flex-row-reverse': message.user_id === authUserId }"
+                                >
+                                    {{-- Avatar Pengirim --}}
+                                    <img :src="message.user?.profile_photo_url || 'https://via.placeholder.com/40'" alt="Avatar" class="w-10 h-10 rounded-full object-cover" :class="{'ml-3': message.user_id !== authUserId, 'mr-3': message.user_id === authUserId}">
+
+                                    <div class="flex-1" :class="{ 'text-right': message.user_id === authUserId }">
+                                        {{-- Nama Pengirim & Waktu --}}
+                                        <p class="text-sm text-gray-800 dark:text-gray-200" :class="{'text-right': message.user_id === authUserId}" x-text="message.user ? message.user.name : ''"></p>
+                                        
+                                        <div class="flex items-center" :class="{ 'flex-row-reverse': message.user_id === authUserId }">
+                                            {{-- Bubble Chat --}}
+                                            <div class="relative inline-block py-2 px-4 rounded-xl max-w-lg" 
+                                                :class="{ 'bg-red-500 text-white': message.user_id === authUserId, 'bg-white dark:bg-gray-700': message.user_id !== authUserId }">
+                                                
+                                                {{-- Tampilan Normal --}}
+                                                <template x-if="editingMessageId !== message.id">
+                                                    <div>
+                                                        <p class="text-left" x-text="message.body"></p>
+                                                        <div class="text-xs opacity-70 mt-1" :class="{'text-gray-200': message.user_id === authUserId, 'text-gray-500': message.user_id !== authUserId}">
+                                                            <span x-text="formatTime(message.created_at)"></span>
+                                                            <span x-show="message.created_at !== message.updated_at" class="italic"> (diedit)</span>
+                                                        </div>
+                                                    </div>
+                                                </template>
+
+                                                {{-- Tampilan Edit --}}
+                                                <template x-if="editingMessageId === message.id">
+                                                    <div class="w-96">
+                                                        <textarea x-model="editingMessageBody" class="w-full text-black border-gray-300 rounded-md shadow-sm" x-ref="editingTextarea" @keydown.escape.prevent="cancelEditing()"></textarea>
+                                                        <div class="text-xs text-left mt-2">
+                                                            <span>Tekan Esc untuk batal, Enter untuk </span>
+                                                            <button @click="saveEdit(message.id)" class="text-blue-500 hover:underline">simpan</button>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+
+                                            {{-- Tombol Aksi (Edit, Copy, dll.) --}}
+                                            <div x-data="{ open: false }" class="relative" x-show="message.user_id === authUserId">
+                                                <button @click="open = !open" class="p-2 rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 transition text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600">
+                                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
+                                                </button>
+                                                <div x-show="open" @click.away="open = false" x-transition class="absolute z-10 w-40 bg-white dark:bg-gray-800 rounded-md shadow-lg border dark:border-gray-700" :class="{'right-full mr-2': message.user_id === authUserId, 'left-full ml-2': message.user_id !== authUserId}">
+                                                    <ul class="py-1 text-sm text-gray-700 dark:text-gray-200">
+                                                        <li><a href="#" @click.prevent="copyMessage(message.body)" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">Salin Pesan</a></li>
+                                                        <li><a href="#" @click.prevent="startEditing(message)" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">Edit Pesan</a></li>
+                                                        <li><a href="#" @click.prevent="forwardMessage(message.id)" class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600">Teruskan</a></li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </template>
@@ -135,6 +179,8 @@
                 isLoading: false,
                 isSending: false,
                 authUserId: {{ auth()->id() }},
+                editingMessageId: null,      
+                editingMessageBody: '',
 
                 init(initialConversationId) {
                     fetch("{{ route('api.conversations.index') }}")
@@ -203,6 +249,74 @@
                         this.newMessageBody = messageBody; // Kembalikan teks jika gagal kirim
                     })
                     .finally(() => this.isSending = false);
+                },
+
+                copyMessage(text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        // Tampilkan notifikasi sukses menggunakan SweetAlert
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            icon: 'success',
+                            title: 'Pesan disalin!',
+                            showConfirmButton: false,
+                            timer: 1500
+                        })
+                    });
+                },
+
+                startEditing(message) {
+                    // Cek otorisasi di frontend untuk UX yang lebih cepat
+                    if (message.user_id !== this.authUserId) return;
+                    
+                    this.editingMessageId = message.id;
+                    this.editingMessageBody = message.body;
+
+                    this.$nextTick(() => {
+                        this.$refs.editingTextarea.focus();
+                    });
+                },
+
+                cancelEditing() {
+                    this.editingMessageId = null;
+                    this.editingMessageBody = '';
+                },
+
+                saveEdit(messageId) {
+                    if (this.editingMessageBody.trim() === '') return;
+
+                    fetch(`/api/messages/${messageId}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ body: this.editingMessageBody })
+                    })
+                    .then(response => {
+                        if (!response.ok) {
+                            // Tampilkan error jika tidak diizinkan atau ada masalah lain
+                            return response.json().then(err => { throw new Error(err.message) });
+                        }
+                        return response.json();
+                    })
+                    .then(updatedMessage => {
+                        // Update pesan di array messages
+                        const index = this.messages.findIndex(m => m.id === updatedMessage.id);
+                        if (index !== -1) {
+                            this.messages[index] = updatedMessage;
+                        }
+                        this.cancelEditing(); // Keluar dari mode edit
+                    })
+                    .catch(error => {
+                        Swal.fire('Gagal!', error.message || 'Tidak dapat mengedit pesan.', 'error');
+                    });
+                },
+
+                forwardMessage(messageId) {
+                    // Logika untuk forward akan ditambahkan di sini nanti
+                    Swal.fire('Fitur Dalam Pengembangan', 'Fitur untuk meneruskan pesan akan segera hadir.', 'info');
                 },
 
                 confirmDelete(conversationId, partnerName) {

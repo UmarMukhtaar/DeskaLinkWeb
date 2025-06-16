@@ -2,7 +2,7 @@
 
 namespace App\Events;
 
-use App\Models\Message; // 1. Import model Message Anda
+use App\Models\Message;
 use Illuminate\Broadcasting\Channel;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Broadcasting\PresenceChannel;
@@ -15,45 +15,39 @@ class MessageSent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    /**
-     * Properti publik ini akan otomatis dikirim sebagai data event.
-     * @var \App\Models\Message
-     */
     public $message;
 
-    /**
-     * Create a new event instance.
-     *
-     * @param \App\Models\Message $message
-     * @return void
-     */
-    public function __construct(Message $message) // 2. Kita menerima objek Message, bukan hanya string
+    public function __construct(Message $message)
     {
-        $this->message = $message;
+        // Pastikan relasi user sudah dimuat sebelum dikirim
+        $this->message = $message->load('user');
     }
 
     /**
-     * Get the channels the event should broadcast on.
-     *
-     * @return \Illuminate\Broadcasting\Channel|array
+     * Mendefinisikan data yang akan di-broadcast.
+     * Ini memberi kita kontrol penuh atas data yang dikirim.
      */
-    public function broadcastOn()
+    public function broadcastWith(): array
     {
-        // 3. (PALING PENTING) Menggunakan PrivateChannel untuk keamanan.
-        // Ini memastikan hanya user dalam percakapan yang bisa "mendengar" pesannya.
-        // Channel akan menjadi unik untuk setiap percakapan, misal: 'conversation.123'
+        return [
+            // Kita bungkus data pesan di dalam key 'message'
+            'message' => [
+                'id' => $this->message->id,
+                'body' => $this->message->body,
+                'conversation_id' => $this->message->conversation_id,
+                'created_at' => $this->message->created_at->toIso8601String(),
+                'user_id' => $this->message->user_id,
+                'user' => [ // <-- Bagian ini memastikan data user selalu ada
+                    'id' => $this->message->user->id,
+                    'name' => $this->message->user->name,
+                    'profile_photo_url' => $this->message->user->profile_photo_url
+                ]
+            ]
+        ];
+    }
+
+    public function broadcastOn(): PrivateChannel
+    {
         return new PrivateChannel('conversation.' . $this->message->conversation_id);
     }
-
-    /**
-     * Nama event yang akan didengar oleh frontend (JavaScript).
-     *
-     * Jika fungsi ini tidak ada, Laravel akan menggunakan nama class secara default
-     * (yaitu: 'App\Events\MessageSent'), yang mana itu sudah cukup bagus.
-     * Jadi, fungsi broadcastAs() ini bersifat opsional.
-     */
-    // public function broadcastAs()
-    // {
-    //     return 'new-message'; // Contoh jika ingin nama custom
-    // }
 }
